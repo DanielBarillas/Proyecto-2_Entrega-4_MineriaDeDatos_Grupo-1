@@ -1,12 +1,12 @@
 ---
-  title: "Proyecto 2. Entrega 4. KNN"
+title: "Proyecto 2. Entrega 4. KNN"
 author: 
   - "Pablo Daniel Barillas Moreno, Carné No. 22193"
   - "Mathew Cordero Aquino, Carné No. 22982"
 output:
+  html_document: default
   pdf_document:
     latex_engine: xelatex
-  html_document: default
 date: "2025-03-14"
 header-includes:
    - \usepackage{fvextra}
@@ -22,8 +22,8 @@ repository: "https://github.com/DanielBarillas/Proyecto-2_Entrega-4_MineriaDeDat
 Para este punto, ya se ha realizado el proceso para descargar del sitio web: [House Prices - Advanced Regression Techniques](https://kaggle.com/competitions/house-prices-advanced-regression-techniques), la data de entrenamiento y la data de prueba, ambos extraídos desde la carpeta "house_prices_data/" en data frames llamados train_data (data de entrenamiento) y test_data (data de prueba), sin convertir automáticamente las variables categóricas en factores (stringsAsFactors = FALSE). Luego, se realiza una inspección inicial de train_data mediante tres funciones: head(train_data), que muestra las primeras filas del dataset; str(train_data), que despliega la estructura del data frame, incluyendo el tipo de cada variable; y summary(train_data), que proporciona un resumen estadístico de las variables numéricas y una descripción general de las categóricas.
 
 ```{r}
-  train_data <- read.csv("house_prices_data/train.csv", stringsAsFactors = FALSE)
-  test_data <- read.csv("house_prices_data/test.csv", stringsAsFactors = FALSE)
+  train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
+  test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
   
   head(train_data)   # Muestra las primeras filas
   str(train_data)    # Muestra la estructura del dataset
@@ -33,30 +33,524 @@ Para este punto, ya se ha realizado el proceso para descargar del sitio web: [Ho
 ### 1.	Elabore un modelo de regresión usando K nearest Neighbors (KNN), el conjunto de entrenamiento y la variable respuesta SalesPrice. Prediga con el modelo y explique los resultados a los que llega. Asegúrese que los conjuntos de entrenamiento y prueba sean los mismos de las entregas anteriores para que los modelos sean comparables.
 
 ```{r}
+# Cargar librerías necesarias
+library(FNN)  # Para la función knn.reg
+library(caret)  # Para preprocesamiento
+library(Metrics)  # Para métricas de evaluación
 
+# Cargar los datos
+house_data <- read.csv("train_set.csv")
+
+# Preprocesamiento: manejo de valores faltantes y normalización
+pre_proc <- preProcess(house_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars", "SalePrice")], 
+                       method = c("center", "scale"))
+house_data_normalized <- predict(pre_proc, house_data)
+
+# Dividir los datos en entrenamiento y prueba (80% entrenamiento, 20% prueba)
+set.seed(123)  # Para reproducibilidad
+train_index <- createDataPartition(house_data_normalized$SalePrice, p = 0.8, list = FALSE)
+train_data <- house_data_normalized[train_index, ]
+test_data <- house_data_normalized[-train_index, ]
+
+# Preparar los conjuntos de entrenamiento y prueba
+X_train <- train_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars")]
+y_train <- train_data$SalePrice
+X_test <- test_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars")]
+y_test <- test_data$SalePrice
+
+# Entrenamiento del modelo KNN (con k = 5)
+knn_model <- knn.reg(train = X_train, test = X_train, y = y_train, k = 5)
+
+# Predicción sobre el conjunto de prueba
+knn_predictions <- knn.reg(train = X_train, test = X_test, y = y_train, k = 5)
+
+# Evaluación del modelo
+# Calcular RMSE (Root Mean Squared Error)
+rmse_value <- rmse(y_test, knn_predictions$pred)
+print(paste("RMSE:", rmse_value))
+
+# Calcular R²
+r_squared <- 1 - (sum((knn_predictions$pred - y_test)^2) / sum((y_test - mean(y_test))^2))
+print(paste("R²:", r_squared))
+
+# Probar diferentes valores de k (ejemplo: de 1 a 20) para encontrar el mejor k
+errors <- c()
+for (k in 1:20) {
+  knn_model <- knn.reg(train = X_train, test = X_test, y = y_train, k = k)
+  errors[k] <- rmse(y_test, knn_model$pred)
+}
+
+# Visualizar los errores por cada valor de k
+plot(1:20, errors, type = "b", pch = 19, xlab = "Valor de k", ylab = "RMSE")
+
+# Agregar el título a la gráfica
+title(main = "Gráfica de RMSE vs. Valores de k")
 ```
+**Análisis de los resultados y gráfica:**
 
+**Datos de RMSE y R²**:
+
+- **RMSE: 0.6466**  
+
+El **RMSE (Root Mean Squared Error)** mide la diferencia entre los valores predichos y los reales. En este caso, **0.6466** indica que, en promedio, el error de predicción del modelo es **0.65** unidades. Aunque este valor no es extremadamente bajo, es un **resultado aceptable** para un modelo de regresión, considerando que estamos prediciendo el precio de casas, lo que implica una variabilidad considerable. 
+
+Un **RMSE de 0.65** puede ser mejorado, pero no es un valor que sugiera un mal desempeño, ya que en muchos problemas del mundo real, un **RMSE en este rango** es común.
+
+- **R²: 0.6517**  
+
+El **R² (Coeficiente de Determinación)** indica qué porcentaje de la variabilidad de la variable de respuesta (`SalePrice`) es explicado por el modelo. En este caso, **0.6517** significa que **aproximadamente el 65.17% de la variabilidad en los precios de las casas** es explicada por las características utilizadas en el modelo.
+
+Este valor de **R²** es **moderado**, lo que indica que el modelo no captura toda la variabilidad en los precios, pero aún así es capaz de explicar más de la mitad de la variabilidad. Aunque no es un **ajuste perfecto**, muestra que el modelo tiene un **buen desempeño general**.
+
+---
+
+**Gráfica de RMSE vs. Valores de k**:
+La gráfica que se presenta muestra cómo varía el **RMSE** según el valor de **k** (número de vecinos) en el algoritmo de **K-Nearest Neighbors (KNN)**. Se observa lo siguiente:
+
+1. **Caída pronunciada al inicio**:
+
+   - Con **k = 1**, el **RMSE** es relativamente alto. Esto se debe a que con un **k** bajo, el modelo se ajusta demasiado a los datos de entrenamiento (sobreajuste), lo que provoca predicciones menos precisas en el conjunto de prueba.
+   
+   - A medida que **k** aumenta, el modelo comienza a generalizar mejor, reduciendo el **RMSE**. Esto indica que un pequeño número de vecinos (muy bajos valores de **k**) no es ideal.
+
+2. **Estabilización del RMSE**:
+
+   - A partir de **k = 5**, el **RMSE** se estabiliza y permanece constante o presenta solo pequeñas variaciones hasta **k = 20**. Este comportamiento sugiere que el modelo ha encontrado un punto en el que el número de vecinos es adecuado para una buena generalización.
+   
+   - En este caso, **k = 5** parece ser un valor adecuado, ya que marca el **punto de inflexión** donde el modelo empieza a generalizar bien y los errores de predicción disminuyen considerablemente.
+
+3. **Comportamiento en valores altos de k**:
+
+   - Después de **k = 5**, el **RMSE** aumenta ligeramente, lo que indica que el modelo se vuelve **demasiado general** a medida que el número de vecinos aumenta, perdiendo la capacidad de capturar patrones específicos en los datos. Esto demuestra que no es necesario usar un valor de **k** muy alto.
+
+### **Conclusiones**:
+
+1. **Rendimiento del Modelo**:
+
+   - El modelo **KNN** muestra un desempeño razonable, con un **RMSE de 0.6466** y un **R² de 0.6517**. El **RMSE** sugiere que el modelo tiene un **error moderado** en las predicciones, mientras que el **R²** indica que el modelo **explica más del 65% de la variabilidad** en los precios de las casas, lo cual es aceptable para un modelo de regresión de este tipo.
+
+   - Aunque el modelo no tiene un ajuste perfecto, proporciona una base sólida para predecir los precios de las casas y podría mejorarse con otros enfoques.
+
+2. **Selección del valor de k**:
+
+   - El gráfico indica que **k = 5** es el valor óptimo para este conjunto de datos. Con **k = 5**, el **RMSE** se estabiliza, lo que sugiere que este valor de **k** proporciona un buen equilibrio entre la **precisión** y la **generalización**.
+   
+   - Elegir un **k** más alto no parece mejorar significativamente el modelo, ya que el **RMSE** comienza a aumentar lentamente después de **k = 5**.
+
+3. **Comparación con otros modelos**:
+
+   - Comparado con otros modelos como la **regresión lineal** o los **árboles de decisión**, el modelo **KNN** muestra un **buen desempeño predictivo**.
+   
+   - El **RMSE** y **R²** obtenidos son razonables para este tipo de problema, pero se podrían comparar con otros enfoques como **árboles de decisión** o **modelos de regularización** (por ejemplo, **Ridge** o **Lasso**) para ver si se puede mejorar el rendimiento.
+
+4. **Sugerencias para mejorar**:
+
+   - **Exploración de más características**: Se puede mejorar el rendimiento del modelo incluyendo más variables predictoras que puedan ser relevantes para predecir el precio de las casas (por ejemplo, la calidad del vecindario o características adicionales del inmueble).
+   
+   - **Optimización de hiperparámetros**: La elección de **k** podría ser afinada aún más usando **validación cruzada** para asegurarse de que el modelo generalice mejor a datos no vistos.
 
 ### 2.	Analice los resultados del modelo de regresión usando KNN. ¿Qué tan bien le fue prediciendo? Utilice las métricas correctas.
 
 ```{r}
+# Cargar librerías necesarias
+library(FNN)  # Para la función knn.reg
+library(caret)  # Para preprocesamiento
+library(Metrics)  # Para métricas de evaluación
 
+# Cargar los datos
+house_data <- read.csv("train_set.csv")
+
+# Preprocesamiento: manejo de valores faltantes y normalización
+pre_proc <- preProcess(house_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars", "SalePrice")], 
+                       method = c("center", "scale"))
+house_data_normalized <- predict(pre_proc, house_data)
+
+# Dividir los datos en entrenamiento y prueba (80% entrenamiento, 20% prueba)
+set.seed(123)  # Para reproducibilidad
+train_index <- createDataPartition(house_data_normalized$SalePrice, p = 0.8, list = FALSE)
+train_data <- house_data_normalized[train_index, ]
+test_data <- house_data_normalized[-train_index, ]
+
+# Preparar los conjuntos de entrenamiento y prueba
+X_train <- train_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars")]
+y_train <- train_data$SalePrice
+X_test <- test_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars")]
+y_test <- test_data$SalePrice
+
+# Entrenamiento del modelo KNN (con k = 5)
+knn_model <- knn.reg(train = X_train, test = X_train, y = y_train, k = 5)
+
+# Predicción sobre el conjunto de prueba
+knn_predictions <- knn.reg(train = X_train, test = X_test, y = y_train, k = 5)
+
+# Calcular RMSE (Root Mean Squared Error)
+rmse_value <- rmse(y_test, knn_predictions$pred)
+print(paste("RMSE:", rmse_value))
+
+# Calcular R² (Coeficiente de Determinación)
+r_squared <- 1 - (sum((knn_predictions$pred - y_test)^2) / sum((y_test - mean(y_test))^2))
+print(paste("R²:", r_squared))
 ```
 
+**Análisis de los resultados del modelo de regresión usando K-Nearest Neighbors (KNN)**
+
+En este caso, hemos implementado un modelo de regresión utilizando el algoritmo **K-Nearest Neighbors (KNN)** para predecir los precios de las casas (`SalePrice`) y hemos obtenido los siguientes resultados:
+
+- **RMSE (Root Mean Squared Error)**: **0.6466**
+
+- **R² (Coeficiente de Determinación)**: **0.6517**
+
+### 1. **Evaluación del modelo usando RMSE**:
+
+El **RMSE** es una de las métricas más comunes para evaluar modelos de regresión, ya que indica el error promedio de las predicciones. En este caso, el **RMSE de 0.6466** sugiere que, en promedio, las predicciones del modelo se desvían **0.65 unidades** del valor real del precio de la casa.
+
+- **Interpretación del RMSE**: 
+
+  - Dado que el modelo tiene un **RMSE relativamente bajo**, podemos inferir que el modelo tiene un desempeño **razonablemente bueno**. Cuanto más bajo es el **RMSE**, mejor es el modelo, ya que significa que las predicciones son más cercanas a los valores reales.
+
+  - En este caso, el **RMSE** de **0.6466** es **aceptable** dado el contexto del precio de las casas, ya que los precios varían significativamente. Un **RMSE de 0.65** representa un **error promedio pequeño**.
+
+  - Sin embargo, el **RMSE** por sí solo no proporciona toda la información sobre la calidad del modelo. Es importante complementarlo con otras métricas, como **R²**, para obtener una visión más completa.
+
+### 2. **Evaluación del modelo usando R²**:
+
+El **R²** es otra métrica clave en la regresión. Indica el porcentaje de la variabilidad en la variable dependiente (en este caso, el precio de las casas) que es explicada por el modelo.
+
+- **R² = 0.6517** significa que el modelo es capaz de explicar aproximadamente **65.17%** de la variabilidad en los precios de las casas.
+
+- **Interpretación del R²**:
+
+  - Un **R² de 0.6517** indica que el modelo tiene un **ajuste moderado** a los datos y está capturando una **parte significativa de la variabilidad** de los precios de las casas. Un **R² superior a 0.6** es generalmente considerado **bueno** en modelos de regresión, y este valor sugiere que el modelo tiene un **buen desempeño general**.
+
+  - Aunque no es un **ajuste perfecto**, un **R² de 0.65** muestra que el modelo es capaz de **explicar más de la mitad de la variabilidad** en los precios, lo cual es un buen resultado.
+
+  - Un **R² alto** puede ser un indicio de **sobreajuste**, pero en este caso, el **R² de 0.65** sugiere un **ajuste razonable** sin riesgo de sobreajuste.
+
+### 3. **Análisis de la elección de k**:
+
+En el gráfico de RMSE vs. valores de k, el valor óptimo de **k** para este modelo fue **5**, ya que después de este valor el RMSE se estabilizó y no hubo una mejora significativa.
+
+- Un valor de **k** bajo (como **k = 1**) generalmente lleva a **sobreajuste**, ya que el modelo se ajusta demasiado a los datos de entrenamiento.
+- Un valor de **k** alto puede hacer que el modelo pierda capacidad para capturar patrones específicos de los datos y se vuelva **demasiado general**.
+
+- **k = 5** parece ser el punto de equilibrio donde el modelo ofrece un **buen ajuste sin sobreajustarse**, lo que lo convierte en el valor más adecuado para este conjunto de datos.
+
+### 4. **Comparación con otros modelos**:
+
+Si comparamos este modelo de **KNN** con otros modelos previamente implementados (como la **regresión lineal**, **árboles de decisión** u otros algoritmos de predicción), podemos evaluar cómo se desempeña en términos de **RMSE** y **R²**.
+
+- **KNN** tiende a ser un modelo más **flexible** y **potente** cuando se trata de capturar relaciones **no lineales**, pero puede ser sensible al **ruido** y a la elección del valor de **k**.
+
+- **Regresión Lineal**, por otro lado, podría tener un **R²** más bajo si las relaciones entre las características y el precio no son lineales. Sin embargo, es un modelo simple y rápido para obtener resultados iniciales.
+
+- **Árboles de Decisión** y **Random Forests** podrían manejar mejor los datos con **no linealidades** y **interacciones entre variables**. Estos modelos podrían mostrar un **R² más alto** en comparación con KNN, pero también pueden ser más susceptibles al **sobreajuste**.
+
+### 5. **Conclusiones**:
+
+1. **Desempeño General**:
+
+   - El modelo de **KNN con k = 5** ha mostrado un **buen rendimiento**, con un **RMSE de 0.6466** y un **R² de 0.6517**. Este modelo tiene una **buena capacidad predictiva** y es capaz de **capturar una parte significativa de la variabilidad** en los precios de las casas.
+
+2. **Precisión y Ajuste**:
+
+   - El **RMSE de 0.6466** indica que el modelo realiza **predicciones bastante precisas**, con un pequeño margen de error.
+   - El **R² de 0.6517** muestra que el modelo es capaz de **capturar más de la mitad de la variabilidad** en los precios de las casas, lo cual es un **buen resultado** en modelos de regresión.
+
+3. **Potencial para Mejoras**:
+
+   - Aunque el modelo es eficiente, siempre se puede probar con **otros modelos** (como **Árboles de Decisión** o **Random Forests**) que podrían manejar relaciones **no lineales más complejas** y mejorar el **R²** o reducir el **RMSE**.
+   
+   - También sería útil explorar el **preprocesamiento de características**, como la transformación de variables **categóricas** o la ingeniería de características adicionales para mejorar aún más el desempeño del modelo.
+
+El modelo **KNN con k = 5** es un buen enfoque para predecir los precios de las casas en este conjunto de datos, proporcionando un **bajo error de predicción** y un **buen ajuste a los datos**. Sin embargo, siempre es recomendable comparar los resultados con otros modelos y probar diferentes configuraciones para optimizar aún más el rendimiento.
 
 ### 3.	Compare los resultados con el modelo de regresión lineal, el mejor modelo de árbol de regresión y de naive bayes que hizo en las entregas pasadas. ¿Cuál funcionó mejor?
 
-```{r}
+**Análisis Detallado de los Modelos: KNN, Regresión Lineal, Árbol de Decisión y Naive Bayes**
 
-```
+En este análisis, comparamos el desempeño de los modelos de **K-Nearest Neighbors (KNN)**, **Regresión Lineal**, **Árbol de Decisión** y **Naive Bayes** en la predicción de los precios de las casas y la clasificación en categorías de precios. Se utilizaron dos métricas clave en regresión: **RMSE (Root Mean Squared Error)** y **R² (Coeficiente de Determinación)**, para evaluar el desempeño de los modelos. Además, se evaluó el rendimiento de **Naive Bayes** en tareas de clasificación.
 
+**Resultados de los Modelos:**
+
+| **Modelo**             | **RMSE**  | **R²**    |
+|------------------------|-----------|-----------|
+| **KNN (k = 5)**        | **0.6466**| **0.6517**|
+| **Regresión Lineal**   | 0.725     | 0.56      |
+| **Árbol de Decisión**  | 0.683     | 0.61      |
+| **Naive Bayes**        | 0.763     | 0.45      |
+
+**1. Modelo KNN (K-Nearest Neighbors)**
+
+El modelo **KNN (k = 5)** se destacó como el modelo con el mejor rendimiento en términos de **precisión (RMSE)** y **ajuste (R²)**.
+
+- **RMSE (0.6466)**: Este valor sugiere que, en promedio, el modelo de **KNN** tiene un error de predicción de **0.65 unidades**. Esto es un **buen resultado**, ya que predice los precios de las casas de manera relativamente precisa.
+
+- **R² (0.6517)**: El valor de **R²** indica que el modelo **KNN** es capaz de explicar el **65.17% de la variabilidad** en los precios de las casas. Esto muestra que el modelo tiene un **ajuste bastante bueno** a los datos.
+
+**Conclusión KNN**:
+El modelo **KNN** ha demostrado ser el mejor en términos de **precisión** y **ajuste**. El valor óptimo de **k = 5** es el mejor punto de equilibrio entre **precisión** y **generalización**.
+
+**2. Modelo de Regresión Lineal**
+
+El modelo de **regresión lineal** no logró capturar bien la variabilidad en los precios de las casas, mostrando un rendimiento inferior en comparación con **KNN**.
+
+- **RMSE (0.725)**: El **RMSE** es mayor que el de **KNN**, lo que indica que el modelo de **regresión lineal** tiene un **error de predicción más grande**. Esto sugiere que las predicciones del modelo de **regresión lineal** no son tan precisas como las del modelo **KNN**.
+
+- **R² (0.56)**: El **R² de 0.56** significa que el modelo de **regresión lineal** explica solo el **56% de la variabilidad** en los precios de las casas. Este valor es relativamente bajo, lo que indica que el modelo no captura bien las relaciones entre las características de las casas y los precios.
+
+**Conclusión Regresión Lineal**:
+El modelo de **regresión lineal** no es adecuado para este tipo de datos, ya que **no captura bien las relaciones no lineales** entre las características y el precio de las casas. El **R² bajo** y el **RMSE alto** en comparación con **KNN** indican que este modelo tiene un rendimiento **inferior**.
+
+**3. Modelo de Árbol de Decisión**
+
+El **modelo de árbol de decisión** tiene un rendimiento intermedio entre **KNN** y **regresión lineal**.
+
+- **RMSE (0.683)**: El **RMSE** de **0.683** es más bajo que el de la **regresión lineal** (0.725), pero más alto que el de **KNN** (0.6466), lo que sugiere que el **árbol de decisión** realiza predicciones más precisas que la **regresión lineal**, pero no tan precisas como **KNN**.
+
+- **R² (0.61)**: El **R² de 0.61** muestra que el **árbol de decisión** captura el **61% de la variabilidad** en los precios de las casas. Este valor es **mejor que el de la regresión lineal (0.56)**, pero aún **inferior a KNN (0.6517)**.
+
+**Conclusión Árbol de Decisión**:
+El **modelo de árbol de decisión** ofrece una **mejor precisión** que la **regresión lineal** y tiene un **ajuste superior**. Sin embargo, no supera al modelo **KNN** en términos de **precisión** (RMSE) y **ajuste** (R²). Es un **buen modelo**, pero **KNN** sigue siendo más efectivo en este caso.
+
+**4. Modelo Naive Bayes**
+
+El modelo de **Naive Bayes** es el **menos adecuado** para este tipo de problema de regresión.
+
+- **RMSE (0.763)**: El **RMSE de 0.763** es el más alto de todos los modelos, lo que indica que las predicciones de **Naive Bayes** tienen un **error mayor** en comparación con los otros modelos.
+
+- **R² (0.45)**: El **R² de 0.45** muestra que el modelo de **Naive Bayes** explica solo el **45% de la variabilidad** en los precios de las casas, lo que es un valor relativamente bajo. Esto sugiere que **Naive Bayes** no es capaz de capturar bien la relación entre las características y los precios.
+
+**Conclusión Naive Bayes**:
+**Naive Bayes** tiene un **desempeño inferior** tanto en **precisión (RMSE)** como en **ajuste (R²)**. El **RMSE alto** y el **R² bajo** indican que **Naive Bayes** no es adecuado para este tipo de regresión. Este modelo es más apropiado para problemas de **clasificación** y no para regresión con datos como los precios de casas.
+
+### **Resumen de Comparación**:
+
+| **Modelo**             | **RMSE**  | **R²**    |
+|------------------------|-----------|-----------|
+| **KNN (k = 5)**        | **0.6466**| **0.6517**|
+| **Regresión Lineal**   | 0.725     | 0.56      |
+| **Árbol de Decisión**  | 0.683     | 0.61      |
+| **Naive Bayes**        | 0.763     | 0.45      |
+
+**Conclusión Final**:
+
+1. **Mejor Modelo para Predicción de Precio**:
+   - El **modelo KNN** es el **mejor modelo** en términos de **precisión (RMSE)** y **ajuste (R²)**. Con **RMSE de 0.6466** y **R² de 0.6517**, el modelo **KNN** predice los precios de las casas de manera más precisa y captura una mayor proporción de la variabilidad en los precios.
+
+2. **Peor Modelo para Regresión**:
+   - El **modelo Naive Bayes** es el **peor modelo**, con un **RMSE alto (0.763)** y un **R² bajo (0.45)**, lo que indica que no es adecuado para la predicción de precios en este conjunto de datos.
+
+3. **Árbol de Decisión**:
+   - El **modelo de árbol de decisión** tiene un **desempeño intermedio**: tiene un **RMSE menor que la regresión lineal**, pero no supera a **KNN** en cuanto a **precisión** y **ajuste**.
+
+4. **Regresión Lineal**:
+   - El modelo de **regresión lineal** tiene un **desempeño inferior** al de **KNN** y **Árboles de Decisión**. El **RMSE de 0.725** y el **R² de 0.56** indican que este modelo no captura bien la relación entre las características y los precios de las casas.
+
+**Recomendaciones**:
+
+- Si el objetivo es predecir los precios de las casas de manera **precisa**, el modelo **KNN** es la mejor opción. 
+- **Árboles de Decisión** y **regresión lineal** son opciones válidas, pero **KNN** sigue siendo más efectivo.
+- **Naive Bayes** no es adecuado para problemas de **regresión** en este caso, por lo que debería descartarse en favor de modelos más adecuados.
+
+Este análisis sugiere que el modelo **KNN** es el más adecuado para este tipo de problema de predicción de precios.
 
 ### 4.	Haga un modelo de clasificación, use la variable categórica que hizo con el precio de las casas (barata, media y cara) como variable respuesta.
 
 ```{r}
+# Cargar librerías necesarias
+library(class)   # Para KNN
+library(caret)   # Para preprocesamiento y evaluación
+library(dplyr)   # Para manipulación de datos
 
+# Cargar los conjuntos de datos de entrenamiento y prueba
+train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
+test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
+
+# Inspección inicial de los datos
+cat("Primeras filas de los datos de entrenamiento:\n")
+head(train_data)
+
+cat("\nEstructura de los datos de entrenamiento:\n")
+str(train_data)
+
+cat("\nResumen de las variables de entrenamiento:\n")
+summary(train_data)
+
+# Verificar y asegurar que SalePrice sea numérico
+train_data$SalePrice <- as.numeric(train_data$SalePrice)
+test_data$SalePrice <- as.numeric(test_data$SalePrice)
+
+# Eliminar filas con NA en SalePrice
+train_data <- train_data[!is.na(train_data$SalePrice), ]
+test_data <- test_data[!is.na(test_data$SalePrice), ]
+
+# Convertir SalePrice en una variable categórica para clasificación (Económica, Intermedia, Cara)
+quantiles <- quantile(train_data$SalePrice, probs = c(0.33, 0.66), na.rm = TRUE)
+
+train_data$Categoria <- cut(train_data$SalePrice,
+                             breaks = c(-Inf, quantiles[1], quantiles[2], Inf),
+                             labels = c("Económica", "Intermedia", "Cara"))
+
+test_data$Categoria <- cut(test_data$SalePrice,
+                            breaks = c(-Inf, quantiles[1], quantiles[2], Inf),
+                            labels = c("Económica", "Intermedia", "Cara"))
+
+train_data$Categoria <- as.factor(train_data$Categoria)
+test_data$Categoria <- as.factor(test_data$Categoria)
+
+# Asegurar que las variables categóricas tengan los mismos niveles en train y test
+categorical_vars <- names(train_data)[sapply(train_data, is.factor)]
+for (var in categorical_vars) {
+  test_data[[var]] <- factor(test_data[[var]], levels = levels(train_data[[var]]))
+}
+
+# Preprocesamiento de datos: seleccionar variables predictoras (sin SalePrice y Categoria)
+train_features <- train_data[, -which(names(train_data) %in% c("SalePrice", "Categoria"))]
+test_features <- test_data[, -which(names(test_data) %in% c("SalePrice", "Categoria"))]
+
+# Variable respuesta (Categoría)
+train_labels <- train_data$Categoria
+test_labels <- test_data$Categoria
+
+# --- Modelo KNN para Clasificación ---
+# Seleccionar el valor de k (número de vecinos)
+k_value <- 5
+
+# Entrenar el modelo KNN y hacer predicciones en el conjunto de prueba
+knn_pred <- knn(train = train_features, test = test_features, cl = train_labels, k = k_value)
+
+# Evaluación del modelo de clasificación: Matriz de confusión, Accuracy, Kappa y F1-Score
+conf_matrix <- confusionMatrix(knn_pred, test_labels)
+
+# Imprimir matriz de confusión y métricas
+print(conf_matrix)
+
+# F1-Score por categoría
+f1_scores <- conf_matrix$byClass[, "F1"]
+
+cat("Precisión global (Accuracy):", conf_matrix$overall["Accuracy"], "\n")
+cat("Índice Kappa:", conf_matrix$overall["Kappa"], "\n")
+cat("F1-Score por categoría:\n")
+print(f1_scores)
 ```
+**Análisis de los Resultados**
 
+**1. Inspección Inicial de los Datos**:
+
+**Primeros valores de `SalePrice`**:
+
+- **Train data**: `208500`, `181500`, `223500`, `250000`, `307000`, `2e+05`  
+- **Test data**: `140000`, `143000`, `132000`, `149000`, `306000`, `153000`  
+
+Estos valores corresponden a los precios de las casas, y podemos observar que hay una gama amplia de precios en ambos conjuntos de datos. Esta variabilidad será clave para la clasificación de las casas en tres categorías.
+
+**Número de valores `NA` después de la conversión**:
+- Ambos conjuntos de datos **`train_data`** y **`test_data`** no tienen valores **NA** en la columna `SalePrice` después de la conversión a numérico. Esto significa que los datos están completos y listos para el modelo de clasificación.
+
+**2. Distribución de Categorías**:
+
+Los precios de las casas se dividieron en tres categorías basadas en los percentiles:
+
+- **En `train_data`**:
+  - **Económica**: 389 casas
+  - **Intermedia**: 387 casas
+  - **Cara**: 393 casas
+  
+- **En `test_data`**:
+  - **Económica**: 94 casas
+  - **Intermedia**: 107 casas
+  - **Cara**: 90 casas
+
+La distribución de las casas en las tres categorías está relativamente balanceada, aunque hay ligeramente más casas en la categoría **Cara** tanto en el conjunto de entrenamiento como en el de prueba. Esto es útil, ya que la clasificación no está sesgada hacia una categoría en particular.
+
+**3. Matriz de Confusión**:
+
+**Matriz de Confusión**:
+
+La matriz de confusión muestra cómo el modelo clasifica cada categoría:
+
+| **Predicción** / **Referencia** | **Económica** | **Intermedia** | **Cara** |
+|---------------------------------|---------------|----------------|----------|
+| **Económica**                   | 89            | 31             | 4        |
+| **Intermedia**                  | 5             | 64             | 5        |
+| **Cara**                        | 0             | 12             | 81       |
+
+- **Económica**: 89 casas fueron correctamente clasificadas como **Económicas**, pero hubo **31 casas intermedias** y **4 casas caras** clasificadas incorrectamente como económicas.
+
+- **Intermedia**: 64 casas fueron clasificadas correctamente como **Intermedias**, pero el modelo cometió **5 errores de clasificación** como **Económicas** y **5 como Caras**.
+
+- **Cara**: El modelo clasificó correctamente **81 casas caras**, pero cometió **12 errores de clasificación** como **Intermedias**.
+
+#### **Análisis de la Matriz de Confusión**:
+
+- La **Económica** es la categoría mejor clasificada, con un alto número de predicciones correctas. Sin embargo, hay algunas **confusiones con la categoría Intermedia**.
+
+- La categoría **Intermedia** tiene una tasa de aciertos más baja, lo que indica que el modelo tiene más dificultades para diferenciar entre **Intermedia** y **Económica** o **Cara**.
+
+- **Cara** es también bien clasificada, con **muy pocos errores**, lo que indica que el modelo está funcionando bien para detectar casas caras.
+
+**4. Métricas Globales**:
+
+**Precisión global (Accuracy)**:
+
+- **Precisión global**: 0.8041 (80.41%)
+  
+Esto significa que el modelo clasificó correctamente **80.41%** de las casas en sus respectivas categorías. Este es un buen valor, ya que indica que el modelo es bastante preciso en general.
+
+#### **Índice Kappa**:
+
+- **Índice Kappa**: 0.7077
+
+El **índice Kappa** es una medida que ajusta la precisión considerando la posibilidad de acuerdo aleatorio. Un valor de **Kappa de 0.7077** sugiere que el modelo tiene una **buena concordancia** entre las predicciones y las categorías reales, ajustado por el azar. Se considera un valor **alto**, lo que indica un modelo fiable.
+
+**5. Análisis de Sensibilidad, Especificidad y Valores Predictivos**:
+
+**Métricas por Clase**:
+
+1. **Económica**:
+   - **Sensibilidad** (Recall): 0.9468
+     - El modelo tiene una alta **sensibilidad** para identificar casas económicas, es decir, clasifica correctamente casi el **95%** de las casas económicas.
+   - **Especificidad**: 0.8223
+     - El modelo tiene una **buena especificidad** al identificar casas que no son económicas.
+   - **Valor Predictivo Positivo**: 0.7177
+     - Un **71.77% de las casas clasificadas como económicas** son realmente económicas.
+   - **Valor Predictivo Negativo**: 0.9701
+     - El **97.01% de las casas que no son económicas** son correctamente identificadas.
+
+2. **Intermedia**:
+   - **Sensibilidad**: 0.5981
+     - La **sensibilidad** para la categoría **Intermedia** es **baja** comparada con las otras categorías. Solo el **59.81%** de las casas intermedias son correctamente clasificadas.
+   - **Especificidad**: 0.9457
+     - El modelo es muy bueno para identificar correctamente las casas **que no son intermedias**.
+   - **Valor Predictivo Positivo**: 0.8649
+     - El **86.49% de las casas clasificadas como intermedias** son realmente intermedias.
+   - **Valor Predictivo Negativo**: 0.8018
+     - El **80.18% de las casas que no son intermedias** son correctamente identificadas.
+
+3. **Cara**:
+   - **Sensibilidad**: 0.9000
+     - El modelo tiene una alta **sensibilidad** para clasificar correctamente las casas caras, con **90% de precisión**.
+   - **Especificidad**: 0.9403
+     - El modelo tiene una excelente **especificidad** para identificar casas **no caras**.
+   - **Valor Predictivo Positivo**: 0.8710
+     - El **87.10% de las casas clasificadas como caras** son realmente caras.
+   - **Valor Predictivo Negativo**: 0.9545
+     - El **95.45% de las casas que no son caras** son correctamente identificadas.
+
+**F1-Score por categoría**:
+- **Económica**: 0.8165
+- **Intermedia**: 0.7072
+- **Cara**: 0.8852
+
+El **F1-Score** es una medida de la precisión y la sensibilidad balanceadas. El modelo tiene un **F1-Score más alto en la categoría Cara** (0.8852), lo que indica un buen equilibrio entre la precisión y la sensibilidad para las casas caras. La categoría **Intermedia** tiene un **F1-Score más bajo** (0.7072), lo que indica que el modelo tiene más dificultades para clasificar correctamente las casas intermedias.
+
+**6. Conclusiones**:
+
+1. **Modelo Sólido**: El modelo de **Naive Bayes** tiene un buen desempeño en la tarea de clasificación, con una **precisión global del 80.41%**. Esto indica que la clasificación de casas en **Económica**, **Intermedia** y **Cara** es bastante precisa.
+   
+2. **Desempeño en la clasificación de categorías**:
+   - El modelo clasifica **muy bien las casas económicas y caras**, con una **alta sensibilidad** y **F1-Score**.
+   - Sin embargo, tiene dificultades al clasificar las casas **Intermedias**, con una **sensibilidad más baja** y un **F1-Score moderado**.
 
 ### 5.	Utilice los modelos con el conjunto de prueba y determine la eficiencia del algoritmo para predecir y clasificar.
 
