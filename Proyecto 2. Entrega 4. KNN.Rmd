@@ -4,9 +4,9 @@ author:
   - "Pablo Daniel Barillas Moreno, Carné No. 22193"
   - "Mathew Cordero Aquino, Carné No. 22982"
 output:
-  html_document: default
   pdf_document:
     latex_engine: xelatex
+  html_document: default
 date: "2025-03-14"
 header-includes:
    - \usepackage{fvextra}
@@ -29,7 +29,6 @@ Para este punto, ya se ha realizado el proceso para descargar del sitio web: [Ho
   str(train_data)    # Muestra la estructura del dataset
   summary(train_data) # Resumen estadístico
 ```
-
 ### 1.	Elabore un modelo de regresión usando K nearest Neighbors (KNN), el conjunto de entrenamiento y la variable respuesta SalesPrice. Prediga con el modelo y explique los resultados a los que llega. Asegúrese que los conjuntos de entrenamiento y prueba sean los mismos de las entregas anteriores para que los modelos sean comparables.
 
 ```{r}
@@ -123,7 +122,7 @@ La gráfica que se presenta muestra cómo varía el **RMSE** según el valor de 
 
    - Después de **k = 5**, el **RMSE** aumenta ligeramente, lo que indica que el modelo se vuelve **demasiado general** a medida que el número de vecinos aumenta, perdiendo la capacidad de capturar patrones específicos en los datos. Esto demuestra que no es necesario usar un valor de **k** muy alto.
 
-### **Conclusiones**:
+**Conclusiones**:
 
 1. **Rendimiento del Modelo**:
 
@@ -191,7 +190,6 @@ print(paste("RMSE:", rmse_value))
 r_squared <- 1 - (sum((knn_predictions$pred - y_test)^2) / sum((y_test - mean(y_test))^2))
 print(paste("R²:", r_squared))
 ```
-
 **Análisis de los resultados del modelo de regresión usando K-Nearest Neighbors (KNN)**
 
 En este caso, hemos implementado un modelo de regresión utilizando el algoritmo **K-Nearest Neighbors (KNN)** para predecir los precios de las casas (`SalePrice`) y hemos obtenido los siguientes resultados:
@@ -200,7 +198,7 @@ En este caso, hemos implementado un modelo de regresión utilizando el algoritmo
 
 - **R² (Coeficiente de Determinación)**: **0.6517**
 
-### 1. **Evaluación del modelo usando RMSE**:
+1. **Evaluación del modelo usando RMSE**:
 
 El **RMSE** es una de las métricas más comunes para evaluar modelos de regresión, ya que indica el error promedio de las predicciones. En este caso, el **RMSE de 0.6466** sugiere que, en promedio, las predicciones del modelo se desvían **0.65 unidades** del valor real del precio de la casa.
 
@@ -212,7 +210,7 @@ El **RMSE** es una de las métricas más comunes para evaluar modelos de regresi
 
   - Sin embargo, el **RMSE** por sí solo no proporciona toda la información sobre la calidad del modelo. Es importante complementarlo con otras métricas, como **R²**, para obtener una visión más completa.
 
-### 2. **Evaluación del modelo usando R²**:
+2. **Evaluación del modelo usando R²**:
 
 El **R²** es otra métrica clave en la regresión. Indica el porcentaje de la variabilidad en la variable dependiente (en este caso, el precio de las casas) que es explicada por el modelo.
 
@@ -226,7 +224,7 @@ El **R²** es otra métrica clave en la regresión. Indica el porcentaje de la v
 
   - Un **R² alto** puede ser un indicio de **sobreajuste**, pero en este caso, el **R² de 0.65** sugiere un **ajuste razonable** sin riesgo de sobreajuste.
 
-### 3. **Análisis de la elección de k**:
+3. **Análisis de la elección de k**:
 
 En el gráfico de RMSE vs. valores de k, el valor óptimo de **k** para este modelo fue **5**, ya que después de este valor el RMSE se estabilizó y no hubo una mejora significativa.
 
@@ -235,7 +233,7 @@ En el gráfico de RMSE vs. valores de k, el valor óptimo de **k** para este mod
 
 - **k = 5** parece ser el punto de equilibrio donde el modelo ofrece un **buen ajuste sin sobreajustarse**, lo que lo convierte en el valor más adecuado para este conjunto de datos.
 
-### 4. **Comparación con otros modelos**:
+4. **Comparación con otros modelos**:
 
 Si comparamos este modelo de **KNN** con otros modelos previamente implementados (como la **regresión lineal**, **árboles de decisión** u otros algoritmos de predicción), podemos evaluar cómo se desempeña en términos de **RMSE** y **R²**.
 
@@ -245,7 +243,7 @@ Si comparamos este modelo de **KNN** con otros modelos previamente implementados
 
 - **Árboles de Decisión** y **Random Forests** podrían manejar mejor los datos con **no linealidades** y **interacciones entre variables**. Estos modelos podrían mostrar un **R² más alto** en comparación con KNN, pero también pueden ser más susceptibles al **sobreajuste**.
 
-### 5. **Conclusiones**:
+5. **Conclusiones**:
 
 1. **Desempeño General**:
 
@@ -323,7 +321,7 @@ El modelo de **Naive Bayes** es el **menos adecuado** para este tipo de problema
 **Conclusión Naive Bayes**:
 **Naive Bayes** tiene un **desempeño inferior** tanto en **precisión (RMSE)** como en **ajuste (R²)**. El **RMSE alto** y el **R² bajo** indican que **Naive Bayes** no es adecuado para este tipo de regresión. Este modelo es más apropiado para problemas de **clasificación** y no para regresión con datos como los precios de casas.
 
-### **Resumen de Comparación**:
+**Resumen de Comparación**:
 
 | **Modelo**             | **RMSE**  | **R²**    |
 |------------------------|-----------|-----------|
@@ -358,214 +356,551 @@ Este análisis sugiere que el modelo **KNN** es el más adecuado para este tipo 
 
 ```{r}
 # Cargar librerías necesarias
-library(class)   # Para KNN
-library(caret)   # Para preprocesamiento y evaluación
-library(dplyr)   # Para manipulación de datos
+library(class)
+library(caret)
+library(tidyverse)
+library(randomForest)  # Para comparar con Random Forest
+
+# Cargar los conjuntos de datos
+train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
+test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
+
+# Ver los primeros valores de SalePrice en Train y Test
+head(train_data$SalePrice)
+head(test_data$SalePrice)
+
+# Ver la distribución estadística general de los precios
+summary(train_data$SalePrice)
+summary(test_data$SalePrice)
+
+# Visualizar la distribución de precios en un histograma
+hist(train_data$SalePrice, breaks = 30, main = "Distribución de SalePrice en Train", col = "blue", xlab = "SalePrice")
+hist(test_data$SalePrice, breaks = 30, main = "Distribución de SalePrice en Test", col = "red", xlab = "SalePrice")
+
+# Seleccionar variables relevantes
+features <- c("GrLivArea", "OverallQual", "TotRmsAbvGrd")
+
+# Manejo de valores nulos imputando la mediana del conjunto de entrenamiento
+for (feature in features) {
+  train_data[[feature]][is.na(train_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+  test_data[[feature]][is.na(test_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+}
+
+# Crear variable categórica (Barata, Media, Cara)
+train_data$PriceCategory <- cut(
+  train_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+test_data$PriceCategory <- cut(
+  test_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+# Convertir a factor
+train_data$PriceCategory <- as.factor(train_data$PriceCategory)
+test_data$PriceCategory <- as.factor(test_data$PriceCategory)
+
+# Normalizar variables
+normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
+for (feature in features) {
+  train_data[[feature]] <- normalize(train_data[[feature]])
+  test_data[[feature]] <- normalize(test_data[[feature]])
+}
+
+# Preparar datos para entrenamiento
+X_train <- train_data[, features]
+y_train <- train_data$PriceCategory
+X_test <- test_data[, features]
+y_test <- test_data$PriceCategory
+
+# Fijar k en 5 para KNN
+k <- 5
+
+# Entrenar KNN con k=5
+knn_model_final <- knn(train = X_train, test = X_test, cl = y_train, k = k)
+conf_matrix_knn <- confusionMatrix(knn_model_final, y_test)
+print(conf_matrix_knn)
+
+# Comparación con otros modelos
+# Árbol de decisión
+tree_model <- train(PriceCategory ~ ., data = train_data[, c(features, "PriceCategory")], method = "rpart")
+tree_pred <- predict(tree_model, test_data)
+conf_matrix_tree <- confusionMatrix(tree_pred, y_test)
+print(conf_matrix_tree)
+
+# Random Forest
+rf_model <- randomForest(PriceCategory ~ ., data = train_data[, c(features, "PriceCategory")], ntree = 100)
+rf_pred <- predict(rf_model, test_data)
+conf_matrix_rf <- confusionMatrix(rf_pred, y_test)
+print(conf_matrix_rf)
+
+# Comparar Accuracy
+accuracy_comparison <- data.frame(
+  Modelo = c("KNN (k=5)", "Árbol de Decisión", "Random Forest"),
+  Accuracy = c(conf_matrix_knn$overall["Accuracy"],
+               conf_matrix_tree$overall["Accuracy"],
+               conf_matrix_rf$overall["Accuracy"])
+)
+print(accuracy_comparison)
+```
+
+**Análisis de los Resultados**
+
+**1. Inspección Inicial de los Datos**
+
+**Primeros valores de `SalePrice` en cada conjunto**
+
+- **Train data**: `208500`, `181500`, `223500`, `250000`, `307000`, `200000`  
+- **Test data**: `140000`, `143000`, `132000`, `149000`, `306000`, `153000`  
+
+Estos valores representan el precio de venta de las casas y muestran una amplia variabilidad. Esta dispersión es clave para nuestra clasificación en **Barata, Media y Cara**.
+
+**Estadísticas descriptivas de los precios en `train_data` y `test_data`:**
+
+| **Métrica**    | **Train Data** | **Test Data** |
+|----------------|----------------|---------------|
+| **Mínimo**     | 35,311         | 34,900        |
+| **1er Cuartil**| 130,000        | 129,750       |
+| **Mediana**    | 163,000        | 163,000       |
+| **Media**      | 181,548        | 178,405       |
+| **3er Cuartil**| 214,000        | 211,000       |
+| **Máximo**     | 755,000        | 440,000       |
+
+**Análisis de la Distribución de `SalePrice` en Train y Test**
+
+Los histogramas muestran la **distribución de los precios de venta (`SalePrice`) en los conjuntos de entrenamiento (`Train`) y prueba (`Test`)**.
+
+**1. Observaciones sobre el conjunto de entrenamiento (`Train`)**
+
+- La distribución **no es simétrica**, tiene **una fuerte asimetría positiva** (cola hacia la derecha).
+- **La mayoría de las casas tienen precios entre $100,000 y $250,000**, con un pico alrededor de los **$150,000 - $180,000**.
+- Hay **algunos valores extremadamente altos** (mayores a $400,000 e incluso más de $600,000), lo que indica la presencia de **valores atípicos (outliers)**.
+
+**Posibles implicaciones:**
+
+- La asimetría podría afectar la clasificación en **Barata, Media y Cara**, ya que los cortes de las categorías no serán equidistantes.
+- **Los outliers podrían influir en modelos sensibles a valores extremos**, como KNN.
+
+---
+
+**2. Observaciones sobre el conjunto de prueba (`Test`)**
+
+- La distribución tiene una **forma similar a la de `Train`**, lo que indica que el muestreo fue **representativo**.
+- Sin embargo, **el test set tiene menos casas caras** (menos valores mayores a $400,000).
+- La mayoría de los precios están entre **$100,000 y $250,000**, pero hay más dispersión en comparación con `Train`.
+
+**Posibles implicaciones:**
+
+- **El modelo podría subestimar casas caras en `Test`**, ya que hay menos ejemplos en este rango.
+- **Si las categorías (`Barata`, `Media`, `Cara`) fueron definidas con `Train`, la falta de valores altos en `Test` podría afectar la precisión del modelo en la clase `Cara`**.
+
+---
+
+**Número de valores `NA` después de la limpieza**
+
+- **`train_data`**: **0 valores `NA`** en `SalePrice`.
+- **`test_data`**: **0 valores `NA`** en `SalePrice`.
+
+**Conclusión**: Los datos están completos y listos para el modelo de clasificación.
+
+---
+
+**3. Distribución de Categorías**
+Se han dividido los precios en **tres categorías** usando terciles:
+
+- **En `train_data`**:
+
+  - **Barata**: 320 casas
+  - **Media**: 369 casas
+  - **Cara**: 310 casas
+
+- **En `test_data`**:
+
+  - **Barata**: 77 casas
+  - **Media**: 61 casas
+  - **Cara**: 59 casas
+
+**Conclusión**:
+
+- **La categoría "Media" es la más difícil de clasificar**, ya que está en la zona intermedia y puede tener características similares a "Barata" y "Cara".
+- **La distribución de `train` y `test` está relativamente balanceada**, lo cual es ideal para entrenar el modelo.
+
+---
+
+**4. Matriz de Confusión del Modelo KNN (`k=5`)**
+
+| **Predicción** / **Referencia** | **Barata** | **Media** | **Cara** |
+|---------------------------------|------------|-----------|----------|
+| **Barata**                      | 77         | 47        | 6        |
+| **Media**                       | 15         | 43        | 9        |
+| **Cara**                        | 1          | 17        | 75       |
+
+**Interpretación**:
+
+- **Las casas "Baratas" tienen 77 aciertos**, pero **47 casas "Medias" fueron clasificadas erróneamente como "Barata"**.
+- **Las casas "Medias" tienen solo 43 aciertos**, mientras que **15 fueron clasificadas erróneamente como "Barata" y 9 como "Cara"**.
+- **Las casas "Caras" tienen 75 aciertos**, con **17 errores en "Media"**.
+
+**Conclusión**:
+
+- **La clase "Media" es la más difícil de clasificar, con la mayor cantidad de errores**.
+- **Las clases "Barata" y "Cara" tienen mejor desempeño**.
+
+---
+
+**5. Precisión Global y Métricas Clave**
+
+**Precisión Global (Accuracy)**
+
+| **Modelo**           | **Accuracy (%)** |
+|----------------------|------------------|
+| **KNN (k=5)**        | **67.24%**       |
+| **Árbol de Decisión**| **60.00%**       |
+| **Random Forest**    | **68.97%**       |
+
+**Conclusión**:
+
+- **KNN (`k=5`) tiene una precisión aceptable (67.24%)**, pero **Random Forest lo supera ligeramente (68.97%)**.
+- **Árbol de Decisión tiene la peor precisión (60.00%)**, lo que confirma que no es la mejor opción para este problema.
+
+---
+
+**Índice Kappa**
+
+| **Modelo**           | **Kappa**  |
+|----------------------|------------|
+| **KNN (k=5)**        | **0.5121** |
+| **Árbol de Decisión**| **0.3836** |
+| **Random Forest**    | **0.5333** |
+
+**Conclusión**:
+
+- **KNN (`k=5`) tiene una concordancia moderada con la realidad (`Kappa = 0.5121`)**, lo que indica que el modelo es fiable.
+- **Random Forest tiene el mejor Kappa (0.5333)**, lo que sugiere que **hace mejores predicciones generales** que KNN.
+- **Árbol de Decisión es el menos confiable (Kappa = 0.3836)**.
+
+---
+
+**6. Sensibilidad, Especificidad, Precisión y F1-Score**
+
+| **Categoría** | **Sensibilidad (Recall)** | **Especificidad** | **Precisión (PPV)** | **F1-Score** |
+|---------------|---------------------------|-------------------|---------------------|--------------|
+| **Barata**    | **82.80%**                | 73.10%            | 59.23%              | **72.22%**   |
+| **Media**     | 40.19%                    | **86.89%**        | 64.18%              | **57.29%**   |
+| **Cara**      | **83.33%**                | **91.00%**        | **80.65%**          | **87.17%**   |
+
+**Conclusión**:
+
+- **La categoría "Barata" tiene la mejor sensibilidad (82.80%)**, lo que indica que la mayoría de las casas económicas fueron correctamente clasificadas.
+- **La categoría "Media" tiene el peor desempeño (40.19% de sensibilidad)**, lo que sugiere que **muchas casas intermedias fueron clasificadas erróneamente**.
+- **La categoría "Cara" tiene la mejor F1-Score (87.17%)**, lo que indica que **el modelo es muy bueno clasificando casas caras**.
+
+---
+
+**6️ .Comparación con Otros Modelos**
+
+| **Modelo**           | **Accuracy** | **Kappa**  |
+|----------------------|--------------|------------|
+| **KNN (k=5)**        | **67.24%**   | **0.5121** |
+| **Árbol de Decisión**| **60.00%**   | **0.3836** |
+| **Random Forest**    | **68.97%**   | **0.5333** |
+
+**Conclusión**:
+
+1. **KNN (`k=5`) funciona bien, pero es superado por Random Forest (68.97%)**.
+2. **Random Forest tiene mejor precisión y Kappa, lo que sugiere que puede ser el mejor modelo.**
+3. **Árbol de Decisión es el peor modelo, con la menor precisión (60.00%) y Kappa (0.3836).**
+
+---
+
+**Conclusiones Finales**
+
+**Fortalezas de KNN (k=5)**
+
+1. **Buena precisión (67.24%)**, aunque inferior a Random Forest.
+2. **Alta sensibilidad en "Barata" (82.80%) y "Cara" (83.33%)**.
+3. **Buen equilibrio entre precisión y sensibilidad en "Cara" (F1-Score: 87.17%)**.
+
+**Debilidades de KNN (k=5)**
+
+1. **La categoría "Media" sigue siendo la más difícil de clasificar** (Sensibilidad: 40.19%).
+2. **Random Forest tiene un mejor rendimiento general**, con mayor precisión y Kappa.
+
+### 5.	Utilice los modelos con el conjunto de prueba y determine la eficiencia del algoritmo para predecir y clasificar.
+
+```{r}
+# Cargar librerías necesarias
+library(class)
+library(caret)
+library(tidyverse)
 
 # Cargar los conjuntos de datos de entrenamiento y prueba
 train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
 test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
 
-# Inspección inicial de los datos
-cat("Primeras filas de los datos de entrenamiento:\n")
-head(train_data)
+# Seleccionar variables relevantes
+features <- c("GrLivArea", "OverallQual", "TotRmsAbvGrd")
 
-cat("\nEstructura de los datos de entrenamiento:\n")
-str(train_data)
-
-cat("\nResumen de las variables de entrenamiento:\n")
-summary(train_data)
-
-# Verificar y asegurar que SalePrice sea numérico
-train_data$SalePrice <- as.numeric(train_data$SalePrice)
-test_data$SalePrice <- as.numeric(test_data$SalePrice)
-
-# Eliminar filas con NA en SalePrice
-train_data <- train_data[!is.na(train_data$SalePrice), ]
-test_data <- test_data[!is.na(test_data$SalePrice), ]
-
-# Convertir SalePrice en una variable categórica para clasificación (Económica, Intermedia, Cara)
-quantiles <- quantile(train_data$SalePrice, probs = c(0.33, 0.66), na.rm = TRUE)
-
-train_data$Categoria <- cut(train_data$SalePrice,
-                             breaks = c(-Inf, quantiles[1], quantiles[2], Inf),
-                             labels = c("Económica", "Intermedia", "Cara"))
-
-test_data$Categoria <- cut(test_data$SalePrice,
-                            breaks = c(-Inf, quantiles[1], quantiles[2], Inf),
-                            labels = c("Económica", "Intermedia", "Cara"))
-
-train_data$Categoria <- as.factor(train_data$Categoria)
-test_data$Categoria <- as.factor(test_data$Categoria)
-
-# Asegurar que las variables categóricas tengan los mismos niveles en train y test
-categorical_vars <- names(train_data)[sapply(train_data, is.factor)]
-for (var in categorical_vars) {
-  test_data[[var]] <- factor(test_data[[var]], levels = levels(train_data[[var]]))
+# Imputar valores NA con la mediana del conjunto de entrenamiento
+for (feature in features) {
+  train_data[[feature]][is.na(train_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+  test_data[[feature]][is.na(test_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
 }
 
-# Preprocesamiento de datos: seleccionar variables predictoras (sin SalePrice y Categoria)
-train_features <- train_data[, -which(names(train_data) %in% c("SalePrice", "Categoria"))]
-test_features <- test_data[, -which(names(test_data) %in% c("SalePrice", "Categoria"))]
+# Crear variable categórica (Barata, Media, Cara)
+train_data$PriceCategory <- cut(
+  train_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
 
-# Variable respuesta (Categoría)
-train_labels <- train_data$Categoria
-test_labels <- test_data$Categoria
+test_data$PriceCategory <- cut(
+  test_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
 
-# --- Modelo KNN para Clasificación ---
-# Seleccionar el valor de k (número de vecinos)
-k_value <- 5
+# Convertir a factor
+train_data$PriceCategory <- as.factor(train_data$PriceCategory)
+test_data$PriceCategory <- as.factor(test_data$PriceCategory)
 
-# Entrenar el modelo KNN y hacer predicciones en el conjunto de prueba
-knn_pred <- knn(train = train_features, test = test_features, cl = train_labels, k = k_value)
+# Normalizar variables
+normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
+for (feature in features) {
+  train_data[[feature]] <- normalize(train_data[[feature]])
+  test_data[[feature]] <- normalize(test_data[[feature]])
+}
 
-# Evaluación del modelo de clasificación: Matriz de confusión, Accuracy, Kappa y F1-Score
-conf_matrix <- confusionMatrix(knn_pred, test_labels)
+# Preparar datos para entrenamiento
+X_train <- train_data[, features]
+y_train <- train_data$PriceCategory
+X_test <- test_data[, features]
+y_test <- test_data$PriceCategory
 
-# Imprimir matriz de confusión y métricas
-print(conf_matrix)
+# Fijar k en 5 para KNN
+k <- 5
 
-# F1-Score por categoría
-f1_scores <- conf_matrix$byClass[, "F1"]
+# Entrenar KNN con k=5
+knn_model_final <- knn(train = X_train, test = X_test, cl = y_train, k = k)
+conf_matrix_knn <- confusionMatrix(knn_model_final, y_test)
+print(conf_matrix_knn)
 
-cat("Precisión global (Accuracy):", conf_matrix$overall["Accuracy"], "\n")
-cat("Índice Kappa:", conf_matrix$overall["Kappa"], "\n")
-cat("F1-Score por categoría:\n")
-print(f1_scores)
+# Extraer métricas por clase
+knn_metrics <- conf_matrix_knn$byClass[, c("Sensitivity", "Specificity", "Precision", "F1")]
+knn_metrics_df <- as.data.frame(knn_metrics)
+rownames(knn_metrics_df) <- c("Barata", "Media", "Cara")
+print(knn_metrics_df)
+
+# Mostrar precisión global
+knn_accuracy <- conf_matrix_knn$overall["Accuracy"]
+print(paste("Accuracy del modelo KNN con k=5:", knn_accuracy))
 ```
-**Análisis de los Resultados**
+**Análisis y Conclusiones del Inciso 5 – Evaluación del Modelo KNN (`k=5`) en el Conjunto de Prueba**  
 
-**1. Inspección Inicial de los Datos**:
+El objetivo de este inciso es evaluar el **rendimiento del modelo KNN (`k=5`)** sobre el conjunto de prueba (`test_set.csv`). Para ello, analizamos la **precisión global (`Accuracy`), la matriz de confusión y métricas clave** como la **sensibilidad, especificidad, precisión y F1-Score**.  
 
-**Primeros valores de `SalePrice`**:
+---
 
-- **Train data**: `208500`, `181500`, `223500`, `250000`, `307000`, `2e+05`  
-- **Test data**: `140000`, `143000`, `132000`, `149000`, `306000`, `153000`  
+**1. Evaluación General del Modelo KNN**
 
-Estos valores corresponden a los precios de las casas, y podemos observar que hay una gama amplia de precios en ambos conjuntos de datos. Esta variabilidad será clave para la clasificación de las casas en tres categorías.
+**Precisión Global (`Accuracy`)**
 
-**Número de valores `NA` después de la conversión**:
-- Ambos conjuntos de datos **`train_data`** y **`test_data`** no tienen valores **NA** en la columna `SalePrice` después de la conversión a numérico. Esto significa que los datos están completos y listos para el modelo de clasificación.
+| **Modelo**    | **Accuracy (%)** |
+|---------------|------------------|
+| **KNN (k=5)** | **65.86%**       |
 
-**2. Distribución de Categorías**:
+**Interpretación**:  
 
-Los precios de las casas se dividieron en tres categorías basadas en los percentiles:
+- **El modelo KNN clasifica correctamente el 65.86% de las casas en el conjunto de prueba**.  
+- **El intervalo de confianza (95% CI: 60.09% - 71.30%)** indica que la precisión del modelo está dentro de un margen aceptable, aunque puede mejorar.  
+- **La prueba de significancia (`P-Value < 2.2e-16`)** sugiere que la precisión del modelo es significativamente mejor que una clasificación aleatoria.  
 
-- **En `train_data`**:
-  - **Económica**: 389 casas
-  - **Intermedia**: 387 casas
-  - **Cara**: 393 casas
-  
-- **En `test_data`**:
-  - **Económica**: 94 casas
-  - **Intermedia**: 107 casas
-  - **Cara**: 90 casas
+---
 
-La distribución de las casas en las tres categorías está relativamente balanceada, aunque hay ligeramente más casas en la categoría **Cara** tanto en el conjunto de entrenamiento como en el de prueba. Esto es útil, ya que la clasificación no está sesgada hacia una categoría en particular.
+**2. Matriz de Confusión del Modelo KNN (`k=5`)**
 
-**3. Matriz de Confusión**:
+| **Predicción** / **Referencia** | **Barata** | **Media** | **Cara** |
+|---------------------------------|------------|-----------|----------|
+| **Barata**                      | 77         | 49        | 8        |
+| **Media**                       | 15         | 41        | 9        |
+| **Cara**                        | 1          | 17        | 73       |
 
-**Matriz de Confusión**:
+**Análisis de la matriz de confusión**:
 
-La matriz de confusión muestra cómo el modelo clasifica cada categoría:
+1. **Casas "Baratas"**:  
 
-| **Predicción** / **Referencia** | **Económica** | **Intermedia** | **Cara** |
-|---------------------------------|---------------|----------------|----------|
-| **Económica**                   | 89            | 31             | 4        |
-| **Intermedia**                  | 5             | 64             | 5        |
-| **Cara**                        | 0             | 12             | 81       |
+   - **77 clasificadas correctamente** como **"Barata"**.  
+   - **49 casas "Media" fueron erróneamente clasificadas como "Barata"**, lo que indica que algunas casas intermedias tienen características similares a las económicas.  
+   - **8 casas "Caras" fueron clasificadas incorrectamente como "Barata"**, lo que es preocupante, ya que estas casas son significativamente diferentes en precio.  
 
-- **Económica**: 89 casas fueron correctamente clasificadas como **Económicas**, pero hubo **31 casas intermedias** y **4 casas caras** clasificadas incorrectamente como económicas.
+2. **Casas "Medias"**:  
 
-- **Intermedia**: 64 casas fueron clasificadas correctamente como **Intermedias**, pero el modelo cometió **5 errores de clasificación** como **Económicas** y **5 como Caras**.
+   - **41 correctamente clasificadas** como "Media".  
+   - **15 casas "Media" fueron clasificadas como "Barata" y 9 como "Cara"**, lo que significa que **el modelo tiene dificultades para diferenciar correctamente la clase intermedia.**  
 
-- **Cara**: El modelo clasificó correctamente **81 casas caras**, pero cometió **12 errores de clasificación** como **Intermedias**.
+3. **Casas "Caras"**:  
 
-#### **Análisis de la Matriz de Confusión**:
+   - **73 correctamente clasificadas** como "Cara".  
+   - **17 casas "Media" fueron clasificadas erróneamente como "Cara"**, lo que sugiere que algunas casas intermedias tienen características más similares a las de una propiedad cara.  
 
-- La **Económica** es la categoría mejor clasificada, con un alto número de predicciones correctas. Sin embargo, hay algunas **confusiones con la categoría Intermedia**.
+**Conclusión**:  
 
-- La categoría **Intermedia** tiene una tasa de aciertos más baja, lo que indica que el modelo tiene más dificultades para diferenciar entre **Intermedia** y **Económica** o **Cara**.
+- **La clase "Media" es la más difícil de clasificar, con la mayor cantidad de errores.**  
+- **Las clases "Barata" y "Cara" tienen mejor desempeño, pero la confusión con "Media" es frecuente.**  
 
-- **Cara** es también bien clasificada, con **muy pocos errores**, lo que indica que el modelo está funcionando bien para detectar casas caras.
+---
 
-**4. Métricas Globales**:
+**3. Métricas Claves de Desempeño del Modelo KNN**
 
-**Precisión global (Accuracy)**:
+**Sensibilidad, Especificidad, Precisión y F1-Score**
 
-- **Precisión global**: 0.8041 (80.41%)
-  
-Esto significa que el modelo clasificó correctamente **80.41%** de las casas en sus respectivas categorías. Este es un buen valor, ya que indica que el modelo es bastante preciso en general.
+| **Clase**  | **Sensibilidad (Recall)** | **Especificidad** | **Precisión (PPV)** | **F1-Score** |
+|------------|---------------------------|-------------------|---------------------|--------------|
+| **Barata** | **82.80%**                | 71.07%            | 57.46%              | **67.84%**   |
+| **Media**  | 38.32%                    | **86.89%**        | 63.08%              | **47.67%**   |
+| **Cara**   | **81.11%**                | **91.00%**        | **80.22%**          | **80.66%**   |
 
-#### **Índice Kappa**:
+**Interpretación de cada métrica**:
 
-- **Índice Kappa**: 0.7077
+**Sensibilidad (Recall)**
 
-El **índice Kappa** es una medida que ajusta la precisión considerando la posibilidad de acuerdo aleatorio. Un valor de **Kappa de 0.7077** sugiere que el modelo tiene una **buena concordancia** entre las predicciones y las categorías reales, ajustado por el azar. Se considera un valor **alto**, lo que indica un modelo fiable.
+- **Indica qué porcentaje de las casas de cada categoría fueron clasificadas correctamente.**
+- **"Barata" tiene la mejor sensibilidad (82.80%)**, lo que significa que la mayoría de las casas baratas fueron correctamente clasificadas.
+- **"Media" tiene la peor sensibilidad (38.32%)**, lo que indica que casi la mitad de las casas intermedias fueron clasificadas erróneamente como "Barata" o "Cara".
+- **"Cara" también tiene una alta sensibilidad (81.11%)**, lo que indica que la mayoría de las casas caras fueron correctamente identificadas.
 
-**5. Análisis de Sensibilidad, Especificidad y Valores Predictivos**:
+**Especificidad**
 
-**Métricas por Clase**:
+- **Mide la capacidad del modelo para NO confundir una clase con otra.**
 
-1. **Económica**:
-   - **Sensibilidad** (Recall): 0.9468
-     - El modelo tiene una alta **sensibilidad** para identificar casas económicas, es decir, clasifica correctamente casi el **95%** de las casas económicas.
-   - **Especificidad**: 0.8223
-     - El modelo tiene una **buena especificidad** al identificar casas que no son económicas.
-   - **Valor Predictivo Positivo**: 0.7177
-     - Un **71.77% de las casas clasificadas como económicas** son realmente económicas.
-   - **Valor Predictivo Negativo**: 0.9701
-     - El **97.01% de las casas que no son económicas** son correctamente identificadas.
+- **"Cara" tiene la mejor especificidad (91.00%)**, lo que significa que muy pocas casas de otras categorías fueron erróneamente clasificadas como "Cara".
+- **"Media" también tiene una alta especificidad (86.89%)**, pero su baja sensibilidad sugiere que el modelo tiene dificultades para diferenciar esta clase correctamente.
 
-2. **Intermedia**:
-   - **Sensibilidad**: 0.5981
-     - La **sensibilidad** para la categoría **Intermedia** es **baja** comparada con las otras categorías. Solo el **59.81%** de las casas intermedias son correctamente clasificadas.
-   - **Especificidad**: 0.9457
-     - El modelo es muy bueno para identificar correctamente las casas **que no son intermedias**.
-   - **Valor Predictivo Positivo**: 0.8649
-     - El **86.49% de las casas clasificadas como intermedias** son realmente intermedias.
-   - **Valor Predictivo Negativo**: 0.8018
-     - El **80.18% de las casas que no son intermedias** son correctamente identificadas.
+**Precisión (PPV - Positive Predictive Value)**
 
-3. **Cara**:
-   - **Sensibilidad**: 0.9000
-     - El modelo tiene una alta **sensibilidad** para clasificar correctamente las casas caras, con **90% de precisión**.
-   - **Especificidad**: 0.9403
-     - El modelo tiene una excelente **especificidad** para identificar casas **no caras**.
-   - **Valor Predictivo Positivo**: 0.8710
-     - El **87.10% de las casas clasificadas como caras** son realmente caras.
-   - **Valor Predictivo Negativo**: 0.9545
-     - El **95.45% de las casas que no son caras** son correctamente identificadas.
+- **Indica cuántas de las casas clasificadas en cada categoría realmente pertenecen a esa categoría.**
+- **"Cara" tiene la mejor precisión (80.22%)**, lo que indica que cuando el modelo dice que una casa es "Cara", tiene una alta probabilidad de estar en lo correcto.
+- **"Media" tiene un rendimiento más bajo en precisión (63.08%)**, lo que refuerza la idea de que es la categoría más difícil de clasificar.
 
-**F1-Score por categoría**:
-- **Económica**: 0.8165
-- **Intermedia**: 0.7072
-- **Cara**: 0.8852
+**F1-Score**
 
-El **F1-Score** es una medida de la precisión y la sensibilidad balanceadas. El modelo tiene un **F1-Score más alto en la categoría Cara** (0.8852), lo que indica un buen equilibrio entre la precisión y la sensibilidad para las casas caras. La categoría **Intermedia** tiene un **F1-Score más bajo** (0.7072), lo que indica que el modelo tiene más dificultades para clasificar correctamente las casas intermedias.
+- **Es el equilibrio entre precisión y sensibilidad.**
+- **"Cara" tiene el mejor F1-Score (80.66%)**, lo que significa que el modelo tiene un buen balance en la clasificación de estas casas.
+- **"Media" tiene el F1-Score más bajo (47.67%)**, lo que confirma que el modelo tiene problemas para identificar correctamente esta categoría.
 
-**6. Conclusiones**:
+---
 
-1. **Modelo Sólido**: El modelo de **Naive Bayes** tiene un buen desempeño en la tarea de clasificación, con una **precisión global del 80.41%**. Esto indica que la clasificación de casas en **Económica**, **Intermedia** y **Cara** es bastante precisa.
-   
-2. **Desempeño en la clasificación de categorías**:
-   - El modelo clasifica **muy bien las casas económicas y caras**, con una **alta sensibilidad** y **F1-Score**.
-   - Sin embargo, tiene dificultades al clasificar las casas **Intermedias**, con una **sensibilidad más baja** y un **F1-Score moderado**.
+**4. Conclusiones Finales y Recomendaciones**
 
-### 5.	Utilice los modelos con el conjunto de prueba y determine la eficiencia del algoritmo para predecir y clasificar.
+**untos Fuertes del Modelo KNN (`k=5`)**
 
-```{r}
+1. **Buena precisión global (65.86%)**, lo que indica que el modelo hace predicciones razonablemente correctas.
+2. **Alta sensibilidad en "Barata" (82.80%) y "Cara" (81.11%)**, lo que significa que el modelo detecta correctamente la mayoría de las casas en estas categorías.
+3. **Buen F1-Score en "Cara" (80.66%)**, lo que indica un balance sólido entre precisión y sensibilidad para esta categoría.
 
-```
+**reas de Mejora**
 
+1. **La clase "Media" es la más difícil de clasificar**, con baja sensibilidad (38.32%) y F1-Score (47.67%).
+2. **El modelo confunde muchas casas "Medias" con "Baratas" y "Caras"**, lo que sugiere que los límites entre estas categorías no están bien definidos.
+
+**Recomendaciones para Mejorar el Modelo**
+
+**Optimizar KNN (`k=7` o `k=9`)**
+   - Probar **otros valores de `k`** para mejorar la precisión.  
+   - Evaluar **métricas de distancia alternativas** (Manhattan, Minkowski).  
+
+**Mejorar la clasificación de la categoría "Media"**
+
+   - Agregar **más variables predictoras** (`GarageArea`, `FullBath`, `Neighborhood`).  
+   - Aplicar **técnicas de balanceo de datos** (sobremuestreo o submuestreo).  
 
 ### 6.	Haga un análisis de la eficiencia del modelo de clasificación usando una matriz de confusión. Tenga en cuenta la efectividad, donde el algoritmo se equivocó más, donde se equivocó menos y la importancia que tienen los errores.
 
 ```{r}
+# Cargar librerías necesarias
+library(class)
+library(caret)
+library(tidyverse)
 
+# Cargar los conjuntos de datos de entrenamiento y prueba
+train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
+test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
+
+# Seleccionar variables relevantes
+features <- c("GrLivArea", "OverallQual", "TotRmsAbvGrd")
+
+# Imputar valores NA con la mediana del conjunto de entrenamiento
+for (feature in features) {
+  train_data[[feature]][is.na(train_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+  test_data[[feature]][is.na(test_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+}
+
+# Crear variable categórica (Barata, Media, Cara)
+train_data$PriceCategory <- cut(
+  train_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+test_data$PriceCategory <- cut(
+  test_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+# Convertir a factor
+train_data$PriceCategory <- as.factor(train_data$PriceCategory)
+test_data$PriceCategory <- as.factor(test_data$PriceCategory)
+
+# Normalizar variables
+normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
+for (feature in features) {
+  train_data[[feature]] <- normalize(train_data[[feature]])
+  test_data[[feature]] <- normalize(test_data[[feature]])
+}
+
+# Preparar datos para entrenamiento
+X_train <- train_data[, features]
+y_train <- train_data$PriceCategory
+X_test <- test_data[, features]
+y_test <- test_data$PriceCategory
+
+# Fijar k en 5 para KNN
+k <- 5
+
+# Entrenar KNN con k=5
+knn_model_final <- knn(train = X_train, test = X_test, cl = y_train, k = k)
+conf_matrix_knn <- confusionMatrix(knn_model_final, y_test)
+print(conf_matrix_knn)
+
+# Extraer métricas por clase
+knn_metrics <- conf_matrix_knn$byClass[, c("Sensitivity", "Specificity", "Precision", "F1")]
+knn_metrics_df <- as.data.frame(knn_metrics)
+rownames(knn_metrics_df) <- c("Barata", "Media", "Cara")
+print(knn_metrics_df)
+
+# Análisis de los errores
+error_analysis <- as.data.frame(conf_matrix_knn$table)
+colnames(error_analysis) <- c("Referencia", "Predicción", "Frecuencia")
+print(error_analysis)
+
+# Identificar los errores más frecuentes
+errors_only <- error_analysis[error_analysis$Referencia != error_analysis$Predicción, ]
+print(errors_only)
+
+# Mostrar precisión global
+knn_accuracy <- conf_matrix_knn$overall["Accuracy"]
+print(paste("Accuracy del modelo KNN con k=5:", knn_accuracy))
 ```
-
-
 ### 7.	Analice el modelo. ¿Cree que pueda estar sobreajustado?.
 
 ```{r}
