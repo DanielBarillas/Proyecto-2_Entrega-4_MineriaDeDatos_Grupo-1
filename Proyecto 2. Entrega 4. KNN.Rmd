@@ -1310,7 +1310,7 @@ ggplot(regresion, aes(x = Modelo, y = MSE, fill = Modelo)) +
 
 #### Analisis modelos de Regresion
 
-Podemos ver que nuestros modelos de regresion el que le sigue estando mejor es naive bayes y KNN realmente no mejoro mucho con respecto a naive bayes
+Podemos ver que nuestros modelos de regresion el que le sigue estando mejor es naive bayes y KNN realmente no mejoro mucho con respecto a naive bayes,  pero si es un buen modelo, de hecho es bastante decente para poder hacer predicciones con regresion ya que si tiene un buen RMSE a diferencia de hacerlo por clasificacion. Muy probablemente por la naturaleza de KNN que necesita que los datos sean continuos y al clasificar dependiendo mas por distancias que por correlacion entre los datos. 
 
 
 #### Modelos de Clasificacion
@@ -1336,4 +1336,22 @@ ggplot(clasificacion, aes(x = Modelo, y = Accuracy, fill = Modelo)) +
   theme(legend.position = "none")
 
 ```
+
+
+#### Analisis modelos de clasificacion
+
+
+Aqui podemos ver que KNN es el peor de los 4, siendo Random Forest el que sigue liderando con un 0.9 de acurrancy a diferencia de KNN podemos ver que realmente nuestro modelo no ha mejorado en nada la prediccion de clasificacion . 
+
+Esto puede deberse a como mencionamos anteriormente la naturaleza de KNN al ser un modelo que mide distancias entre cada punto para poder realizar clasificaciones en vez de guiarse por correlaciones de los datos, la naturaleza de las variables y la causualidad de cada variable con respecto al objetivo, ademas de no ser muy descriptivo con respecto a que sucede con nuestras variables ya que no nos dijo realmente el comportamiento que suele tener a diferencia de Random Forest y de Arbol de Clasificacion. 
+
+De entre todos el que se suele tardar mas es Random Forest, esto porque suele tener mejor rendimiento, KNN seguira teniendo malores resultados sin embargo fue el mas rapido de los metodos de clasificacion antes vistos por lo que puede ser muy util de usar en el contexto de realizar un analisis rapido o requerir un modelo optimizado para grandes volumnenes de datos. 
+
+
+## Conclusion
+
+Podemos ver que KNN no represento una mejora para los modelos anteriormente vistos, aun asi si es bastante eficiente al momento de hacer regresion , pero es poco recomendable usarlo al clasificar nuestra variable SalePrice, ademas que a diferencia del arbol de clasificacion no nos indica mas puntualidades de nuestra variable objetivo sino que solmanete realiza su prediccion. 
+
+Sin embargo resulto ser uno de los mas rapidos hasta ahora por lo que puede ser recomendable su uso en caso de necesitar prediccion mas optimizada que precisa. Aun con ello no se recomienda usarlo debido a su bajo acurrancy para clasificacion. 
+
 
