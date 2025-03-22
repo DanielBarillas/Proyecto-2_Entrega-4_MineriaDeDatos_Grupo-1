@@ -901,30 +901,439 @@ print(errors_only)
 knn_accuracy <- conf_matrix_knn$overall["Accuracy"]
 print(paste("Accuracy del modelo KNN con k=5:", knn_accuracy))
 ```
+
+### Analisis del modelo
+
+Podemos ver que nuestro modelo se esta confundiendo bastante con identificar las casas Medianas que las Caras o las baratas, esto ya lo vimos que es una naturaleza de nuestros modelos que hemos hecho hasta entonces, esto es normal identificar una casa medianas es mucho mas dificil que identificar una casa cara o barata. Con respecto a los demas se ha visto que ha rendido casi lo mismo que los modelos anteriores. 
+
+
 ### 7.	Analice el modelo. ¿Cree que pueda estar sobreajustado?.
 
-```{r}
 
-```
+No esta sobreajustado de hecho tiene bastante margen de mejora , esto lo podemos ver en su accurrancy que es de 0.66 lo que es mucho peor que los modelos anteriores siendo de 0.72 y de 0.81 por lo que si bien predice bastante bien esta subajustado y realmente en contextos mas profesiones no se puede usar. 
+
+Lo recomendable seria hacer tunning sobre los hiperparametros de nuestro modelo e ir probando ahora bien con los datos de prueba. 
 
 
 ### 8.	Haga un modelo usando validación cruzada, compare los resultados de este con los del modelo anterior. ¿Cuál funcionó mejor?.
 
 ```{r}
+# Cargar librerías necesarias
+library(class)
+library(caret)
+library(tidyverse)
+
+# Cargar los conjuntos de datos
+train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
+test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
+
+# Seleccionar variables relevantes
+features <- c("GrLivArea", "OverallQual", "TotRmsAbvGrd")
+
+
+for (feature in features) {
+  train_data[[feature]][is.na(train_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+  test_data[[feature]][is.na(test_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+}
+
+# Crear variable categórica (Barata, Media, Cara)
+train_data$PriceCategory <- cut(
+  train_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+test_data$PriceCategory <- cut(
+  test_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+
+train_data$PriceCategory <- as.factor(train_data$PriceCategory)
+test_data$PriceCategory <- as.factor(test_data$PriceCategory)
+
+
+normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
+for (feature in features) {
+  train_data[[feature]] <- normalize(train_data[[feature]])
+  test_data[[feature]] <- normalize(test_data[[feature]])
+}
+
+
+train_control <- trainControl(method = "cv", number = 10)
+
+# Entrenar modelo KNN con validación cruzada para encontrar el mejor k
+knn_tuned <- train(
+  PriceCategory ~ ., 
+  data = train_data[, c(features, "PriceCategory")], 
+  method = "knn",
+  trControl = train_control,
+  tuneLength = 10  # Prueba hasta 10 valores de k automáticamente
+)
+
+# Mejor valor de k encontrado
+print(knn_tuned$bestTune)
+
+
+knn_predictions <- predict(knn_tuned, test_data[, features])
+
+
+conf_matrix_knn <- confusionMatrix(knn_predictions, test_data$PriceCategory)
+print(conf_matrix_knn)
+
+
+knn_metrics <- conf_matrix_knn$byClass[, c("Sensitivity", "Specificity", "Precision", "F1")]
+knn_metrics_df <- as.data.frame(knn_metrics)
+rownames(knn_metrics_df) <- c("Barata", "Media", "Cara")
+print(knn_metrics_df)
+
+
+knn_accuracy <- conf_matrix_knn$overall["Accuracy"]
+print(paste("Accuracy del modelo KNN con validación cruzada:", knn_accuracy))
 
 ```
 
+#### Analisis con Validacion Cruzada
+
+Podemos ver que realmente no mejoro mucho haciendo validacion cruzada mejoro de 0.65 a 0.67 con una cantidad de k ahora de 21. Habiendo aumentado a la anterior que fue de 5 , y aun asi con eso no logro mejorar en nada a nuestro modelo mas de un 2% mas. Esto indica que o bien nuestro modelo no puede ser mejorado mas o necesitamos tunear mas datos para poder determinar un mejor modelo. 
 
 ### 9.	Tanto para los modelos de regresión como de clasificación, pruebe con varios valores de los hiperparámetros ¿Qué parámetros pueden tunearse en un KNN?, use el mejor modelo del tuneo, ¿Mejoraron los resultados usando el mejor modelo ahora? Explique.
 
+#### Modelo Regresion
+
+
+
 ```{r}
 
+
+
+
+
+library(caret)  # Para el modelo KNN y preprocesamiento
+library(Metrics)  # Para métricas de evaluación
+
+# Cargar los datos
+house_data <- read.csv("train_set.csv")
+
+# Preprocesamiento: manejo de valores faltantes y normalización
+pre_proc <- preProcess(house_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars", "SalePrice")], 
+                       method = c("center", "scale"))
+house_data_normalized <- predict(pre_proc, house_data)
+
+
+set.seed(123)  # Para reproducibilidad
+train_index <- createDataPartition(house_data_normalized$SalePrice, p = 0.8, list = FALSE)
+train_data <- house_data_normalized[train_index, ]
+test_data <- house_data_normalized[-train_index, ]
+
+
+X_train <- train_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars")]
+y_train <- train_data$SalePrice
+X_test <- test_data[, c("LotArea", "OverallQual", "GrLivArea", "YearBuilt", "TotRmsAbvGrd", "GarageCars")]
+y_test <- test_data$SalePrice
+
+
+train_control <- trainControl(method = "cv", number = 10)  # Validación cruzada de 10 pliegues
+
+
+knn_model_euclidiana <- train(
+  x = X_train, y = y_train, 
+  method = "knn", 
+  trControl = train_control,
+  tuneGrid = expand.grid(k = 5),  # Puedes ajustar el valor de k aquí
+  metric = "RMSE", 
+  preProcess = c("center", "scale")  # Normalización
+)
+
+
+knn_predictions_euclidiana <- predict(knn_model_euclidiana, X_test)
+
+
+rmse_value_euclidiana <- rmse(y_test, knn_predictions_euclidiana)
+print(paste("RMSE (Euclidiana):", rmse_value_euclidiana))
+
+r_squared_euclidiana <- 1 - (sum((knn_predictions_euclidiana - y_test)^2) / sum((y_test - mean(y_test))^2))
+print(paste("R² (Euclidiana):", r_squared_euclidiana))
+
+
+knn_model_manhattan <- train(
+  x = X_train, y = y_train, 
+  method = "knn", 
+  trControl = train_control,
+  tuneGrid = expand.grid(k = 5),  # Ajustar k según se necesite
+  metric = "RMSE", 
+  preProcess = c("center", "scale"),
+  dist = 1  # Distancia Manhattan
+)
+
+knn_predictions_manhattan <- predict(knn_model_manhattan, X_test)
+
+
+rmse_value_manhattan <- rmse(y_test, knn_predictions_manhattan)
+print(paste("RMSE (Manhattan):", rmse_value_manhattan))
+
+r_squared_manhattan <- 1 - (sum((knn_predictions_manhattan - y_test)^2) / sum((y_test - mean(y_test))^2))
+print(paste("R² (Manhattan):", r_squared_manhattan))
+
+
+errors_euclidiana <- c()
+for (k in 1:20) {
+  knn_model_euclidiana <- train(
+    x = X_train, y = y_train, 
+    method = "knn", 
+    trControl = train_control,
+    tuneGrid = expand.grid(k = k),
+    metric = "RMSE", 
+    preProcess = c("center", "scale")
+  )
+  errors_euclidiana[k] <- knn_model_euclidiana$results$RMSE
+}
+
+
+errors_manhattan <- c()
+for (k in 1:20) {
+  knn_model_manhattan <- train(
+    x = X_train, y = y_train, 
+    method = "knn", 
+    trControl = train_control,
+    tuneGrid = expand.grid(k = k),
+    metric = "RMSE", 
+    preProcess = c("center", "scale"),
+    dist = 1
+  )
+  errors_manhattan[k] <- knn_model_manhattan$results$RMSE
+}
+
+
+
+
+# Visualizar los errores por cada valor de k usando distancia Euclidiana
+plot(1:20, errors_euclidiana, type = "b", pch = 19, col = "blue", xlab = "Valor de k", ylab = "RMSE", main = "Gráfica de RMSE vs. Valores de k (Euclidiana vs Manhattan)")
+
+# Agregar la línea para los errores con distancia Manhattan
+lines(1:20, errors_manhattan, type = "b", pch = 19, col = "red")
+
+# Agregar la leyenda a la gráfica
+legend("topright", legend = c("Euclidiana", "Manhattan"), col = c("blue", "red"), pch = 19)
+
+
+
+
+
+
 ```
+
+
+
+#### Analisis de Regresion
+
+Podemos ver que probando hasta con diferentes tipos de manera de realizar las distancias cambio a 0.4. Esto pasa al usar caret en vez de FNN si ya que un numero de K optimo es de 5.  Siendo una mejora del 20%. 
+
+
+#### Modelo de Clasificacion
+
+```{r}
+library(class)
+library(caret)
+library(tidyverse)
+
+# Cargar los conjuntos de datos
+train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
+test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
+
+# Seleccionar variables relevantes
+features <- c("GrLivArea", "OverallQual", "TotRmsAbvGrd")
+
+
+for (feature in features) {
+  train_data[[feature]][is.na(train_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+  test_data[[feature]][is.na(test_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+}
+
+# Crear variable categórica (Barata, Media, Cara)
+train_data$PriceCategory <- cut(
+  train_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+test_data$PriceCategory <- cut(
+  test_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+
+train_data$PriceCategory <- as.factor(train_data$PriceCategory)
+test_data$PriceCategory <- as.factor(test_data$PriceCategory)
+
+
+normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
+for (feature in features) {
+  train_data[[feature]] <- normalize(train_data[[feature]])
+  test_data[[feature]] <- normalize(test_data[[feature]])
+}
+
+
+tune_grid <- expand.grid(
+  kmax = seq(1, 20, by = 2),     
+  distance = c(1, 2),         
+  kernel = c("rectangular", "triangular", "gaussian")
+)
+
+
+
+
+
+knn_tuned <- train(
+  PriceCategory ~ ., 
+  data = train_data[, c(features, "PriceCategory")], 
+  method = "kknn",  
+  tuneGrid = tune_grid
+)
+
+print(knn_tuned$bestTune)
+
+ggplot(knn_tuned) + 
+  ggtitle("Precisión del modelo KNN según parámetros") +
+  xlab("Número de vecinos (k)") + 
+  ylab("Accuracy") + 
+  theme_minimal()
+
+```
+
+#### Rendimiento del mejor
+
+```{r}
+# Cargar librerías necesarias
+library(caret)
+library(kknn)
+library(tidyverse)
+
+# Cargar datasets
+train_data <- read.csv("train_set.csv", stringsAsFactors = FALSE)
+test_data <- read.csv("test_set.csv", stringsAsFactors = FALSE)
+
+# Variables a usar
+features <- c("GrLivArea", "OverallQual", "TotRmsAbvGrd")
+
+# Imputación de valores NA
+for (feature in features) {
+  train_data[[feature]][is.na(train_data[[feature]])] <- median(train_data[[feature]], na.rm = TRUE)
+  test_data[[feature]][is.na(test_data[[feature]])] <- median(test_data[[feature]], na.rm = TRUE)
+}
+
+# Crear variable categórica (Barata, Media, Cara)
+train_data$PriceCategory <- cut(
+  train_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+test_data$PriceCategory <- cut(
+  test_data$SalePrice,
+  breaks = quantile(train_data$SalePrice, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+  labels = c("Barata", "Media", "Cara"),
+  include.lowest = TRUE
+)
+
+
+train_data$PriceCategory <- as.factor(train_data$PriceCategory)
+test_data$PriceCategory <- as.factor(test_data$PriceCategory)
+
+
+normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
+for (feature in features) {
+  train_data[[feature]] <- normalize(train_data[[feature]])
+  test_data[[feature]] <- normalize(test_data[[feature]])
+}
+
+# Entrenar modelo con los parámetros elegidos
+knn_final <- train(
+  PriceCategory ~ ., 
+  data = train_data[, c(features, "PriceCategory")], 
+  method = "kknn",
+  tuneGrid = expand.grid(kmax = 7, distance = 1, kernel = "triangular")
+)
+
+
+predictions <- predict(knn_final, test_data)
+
+
+conf_matrix <- confusionMatrix(predictions, test_data$PriceCategory)
+print(conf_matrix)
+
+
+accuracy <- conf_matrix$overall["Accuracy"]
+print(paste("Accuracy del modelo KNN con kmax=7, distance=1, kernel='triangular':", accuracy))
+
+
+```
+
+
+
+
+#### Analisis Modelo Clasificacion
+
+Podemos ver que nuesotro modelo de clasificacion con un kernel triangular y con un kmax de 7 y distancia de 1 fue el mejor de todos, pero realmente no mejoro mucho en la parte de clasificacion de los modelos. Pero si vemos el acurrancy y el arbol que representa el acurrancy por cada modelo con diferentes parametros no pasa de 0.67 en el mejor de los casos lo cual indica que nuestro modelo en el aspecto de clasificacion esta rindiendo bastante pesimo con respecto a otros. 
 
 
 ### 10.	Compare la eficiencia del algoritmo con el resultado obtenido con el árbol de decisión (el de clasificación), el modelo de random forest y el de naive bayes que hizo en las entregas pasadas. ¿Cuál es mejor para predecir? ¿Cuál se demoró más en procesar?.
 
+
+
+
+#### Modelos de Regresion
+
 ```{r}
+# Datos de regresión
+regresion <- data.frame(
+  Modelo = c("KNN", "Naive Bayes", "Árbol de Regresión"),
+  MSE = c(0.1600,0.05044311, 1658823049)
+)
+
+# Gráfico de MSE (Regresión)
+ggplot(regresion, aes(x = Modelo, y = MSE, fill = Modelo)) +
+  geom_bar(stat = "identity", color = "black", alpha = 0.8) +
+  labs(title = "Comparación de MSE en Modelos de Regresión",
+       x = "Modelo",
+       y = "MSE") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+#### Analisis modelos de Regresion
+
+Podemos ver que nuestros modelos de regresion el que le sigue estando mejor es naive bayes y KNN realmente no mejoro mucho con respecto a naive bayes
+
+
+#### Modelos de Clasificacion
+
+```{r}
+
+
+library(ggplot2)
+
+# Datos de clasificación
+clasificacion <- data.frame(
+  Modelo = c("KNN","Naive Bayes", "Random Forest", "Árbol de Clasificación"),
+  Accuracy = c(0.67, 0.8041237, 0.9816934, 0.7414188)
+)
+
+# Gráfico de Accuracy (Clasificación)
+ggplot(clasificacion, aes(x = Modelo, y = Accuracy, fill = Modelo)) +
+  geom_bar(stat = "identity", color = "black", alpha = 0.8) +
+  labs(title = "Comparación de Accuracy en Modelos de Clasificación",
+       x = "Modelo",
+       y = "Accuracy") +
+  theme_minimal() +
+  theme(legend.position = "none")
 
 ```
 
